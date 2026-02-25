@@ -9,12 +9,13 @@ import {
 } from "@coinbase/onchainkit/transaction";
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { Wallet, ConnectWallet, WalletDropdown } from "@coinbase/onchainkit/wallet";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 import { parseEther } from "viem";
 
 // Только Ethereum Sepolia (chainId 11155111)
 const CHAIN_ID = 11155111;
+const SEPOLIA_CHAIN_ID = 11155111;
 
 // Комиссия из контракта (~$1): 333000000000000 wei
 const CREATION_FEE_WEI = 333000000000000n;
@@ -25,12 +26,15 @@ function generateContentId() {
 
 export function CreateFlow() {
   const { address } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
   const [contentId, setContentId] = useState<string>("");
   const [priceEth, setPriceEth] = useState("0.001");
   const [step, setStep] = useState<"pay" | "upload" | "done">("pay");
   const [image, setImage] = useState<File | null>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [txError, setTxError] = useState<string | null>(null);
   const [frameUrl, setFrameUrl] = useState<string | null>(null);
 
   const initContentId = useCallback(() => {
@@ -39,12 +43,32 @@ export function CreateFlow() {
 
   const handleStatus = useCallback(
     (status: LifecycleStatus) => {
+      setTxError(null);
       if (status.statusName === "success") {
         setStep("upload");
+      }
+      if (status.statusName === "error") {
+        setTxError(
+          "Переключите кошелёк на сеть Ethereum Sepolia и попробуйте снова."
+        );
       }
     },
     []
   );
+
+  const switchToSepolia = useCallback(async () => {
+    setTxError(null);
+    try {
+      await switchChainAsync?.({ chainId: SEPOLIA_CHAIN_ID });
+    } catch (e) {
+      setTxError(
+        "Не удалось переключить сеть. Вручную выберите Ethereum Sepolia в кошельке."
+      );
+    }
+  }, [switchChainAsync]);
+
+  const isWrongChain =
+    chainId !== undefined && chainId !== SEPOLIA_CHAIN_ID;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,12 +184,32 @@ export function CreateFlow() {
           />
         </div>
 
+        {isWrongChain && (
+          <div className="rounded-lg border-2 border-amber-500 bg-amber-50 p-4">
+            <p className="mb-2 font-medium text-amber-900">
+              Нужна сеть Ethereum Sepolia
+            </p>
+            <p className="mb-3 text-sm text-amber-800">
+              Сейчас кошелёк в другой сети. Переключите на Ethereum Sepolia для оплаты.
+            </p>
+            <button
+              type="button"
+              onClick={switchToSepolia}
+              className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+            >
+              Переключить на Ethereum Sepolia
+            </button>
+          </div>
+        )}
+        {txError && (
+          <p className="rounded bg-red-100 p-2 text-sm text-red-700">{txError}</p>
+        )}
         {!hasContract && (
           <p className="rounded bg-amber-100 p-2 text-sm text-amber-800">
             Контракт не задеплоен. Задай NEXT_PUBLIC_BLUR_PAY_ADDRESS в .env.local
           </p>
         )}
-        {calls.length > 0 && (
+        {calls.length > 0 && !isWrongChain && (
           <Transaction
             chainId={CHAIN_ID}
             calls={calls}

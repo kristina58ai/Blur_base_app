@@ -9,11 +9,12 @@ import {
 } from "@coinbase/onchainkit/transaction";
 import type { LifecycleStatus } from "@coinbase/onchainkit/transaction";
 import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 
 // Только Ethereum Sepolia (chainId 11155111)
 const CHAIN_ID = 11155111;
+const SEPOLIA_CHAIN_ID = 11155111;
 
 type ContentMeta = {
   creator: string;
@@ -28,8 +29,25 @@ type Props = {
 
 export function RevealFrame({ contentId, metadata }: Props) {
   const { address } = useAccount();
+  const chainId = useChainId();
+  const { switchChainAsync } = useSwitchChain();
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  const [txError, setTxError] = useState<string | null>(null);
+
+  const switchToSepolia = useCallback(async () => {
+    setTxError(null);
+    try {
+      await switchChainAsync?.({ chainId: SEPOLIA_CHAIN_ID });
+    } catch {
+      setTxError(
+        "Не удалось переключить сеть. Вручную выберите Ethereum Sepolia в кошельке."
+      );
+    }
+  }, [switchChainAsync]);
+
+  const isWrongChain =
+    chainId !== undefined && chainId !== SEPOLIA_CHAIN_ID;
 
   const fetchReveal = useCallback(
     async (txHash?: string) => {
@@ -59,10 +77,16 @@ export function RevealFrame({ contentId, metadata }: Props) {
 
   const handleStatus = useCallback(
     async (status: LifecycleStatus) => {
+      setTxError(null);
       if (status.statusName === "success" && status.statusData?.transactionReceipts?.[0]) {
         const txHash = status.statusData.transactionReceipts[0].transactionHash;
         const url = await fetchReveal(txHash);
         if (url) setSignedUrl(url);
+      }
+      if (status.statusName === "error") {
+        setTxError(
+          "Переключите кошелёк на сеть Ethereum Sepolia и попробуйте снова."
+        );
       }
     },
     [fetchReveal]
@@ -137,7 +161,29 @@ export function RevealFrame({ contentId, metadata }: Props) {
       <p className="text-center text-sm text-gray-600">
         Reveal за {priceEth} ETH
       </p>
-      {calls.length > 0 && (
+      {isWrongChain && (
+        <div className="w-full max-w-md rounded-lg border-2 border-amber-500 bg-amber-50 p-4">
+          <p className="mb-2 font-medium text-amber-900">
+            Нужна сеть Ethereum Sepolia
+          </p>
+          <p className="mb-3 text-sm text-amber-800">
+            Переключите кошелёк на Ethereum Sepolia для оплаты.
+          </p>
+          <button
+            type="button"
+            onClick={switchToSepolia}
+            className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+          >
+            Переключить на Ethereum Sepolia
+          </button>
+        </div>
+      )}
+      {txError && (
+        <p className="w-full max-w-md rounded bg-red-100 p-2 text-center text-sm text-red-700">
+          {txError}
+        </p>
+      )}
+      {calls.length > 0 && !isWrongChain && (
         <Transaction chainId={CHAIN_ID} calls={calls} onStatus={handleStatus}>
           <TransactionButton text={`Reveal за ${priceEth} ETH`} />
           <TransactionStatus>
