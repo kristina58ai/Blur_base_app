@@ -1,11 +1,18 @@
 import { createPublicClient, http } from "viem";
-import { base, baseSepolia } from "viem/chains";
+import { base, baseSepolia, sepolia } from "viem/chains";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "./contract";
 
-const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
-
+const chainName = process.env.NEXT_PUBLIC_CHAIN || "base";
 const chain =
-  process.env.NEXT_PUBLIC_CHAIN === "baseSepolia" ? baseSepolia : base;
+  chainName === "sepolia"
+    ? sepolia
+    : chainName === "baseSepolia"
+      ? baseSepolia
+      : base;
+const rpcUrl =
+  chainName === "sepolia"
+    ? process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org"
+    : process.env.BASE_RPC_URL || (chainName === "baseSepolia" ? "https://sepolia.base.org" : "https://mainnet.base.org");
 
 const client = createPublicClient({
   chain,

@@ -9,6 +9,7 @@
     "lint": "next lint",
     "compile": "hardhat compile",
     "deploy:sepolia": "hardhat run scripts/deploy.ts --network baseSepolia",
+    "deploy:sepolia-eth": "hardhat run scripts/deploy.ts --network sepolia",
     "deploy:base": "hardhat run scripts/deploy.ts --network base"
   },
   "dependencies": {

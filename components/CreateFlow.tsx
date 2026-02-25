@@ -13,7 +13,9 @@ import { useAccount } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 import { parseEther } from "viem";
 
-const CHAIN_ID = process.env.NEXT_PUBLIC_CHAIN === "baseSepolia" ? 84532 : 8453;
+const chainName = process.env.NEXT_PUBLIC_CHAIN || "base";
+const CHAIN_ID =
+  chainName === "sepolia" ? 11155111 : chainName === "baseSepolia" ? 84532 : 8453;
 
 // Комиссия из контракта (~$1): 333000000000000 wei
 const CREATION_FEE_WEI = 333000000000000n;
