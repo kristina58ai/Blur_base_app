@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { OnchainProviders } from "@/components/OnchainProviders";
+import { FarcasterReady } from "@/components/FarcasterReady";
 import "./globals.css";
 import "@coinbase/onchainkit/styles.css";
 
@@ -16,6 +17,7 @@ export default function RootLayout({
   return (
     <html lang="ru">
       <body>
+        <FarcasterReady />
         <OnchainProviders>{children}</OnchainProviders>
       </body>
     </html>
