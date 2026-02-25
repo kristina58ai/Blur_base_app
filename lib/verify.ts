@@ -1,18 +1,10 @@
 import { createPublicClient, http } from "viem";
-import { base, baseSepolia, sepolia } from "viem/chains";
+import { sepolia } from "viem/chains";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "./contract";
 
-const chainName = process.env.NEXT_PUBLIC_CHAIN || "sepolia";
-const chain =
-  chainName === "sepolia"
-    ? sepolia
-    : chainName === "baseSepolia"
-      ? baseSepolia
-      : base;
-const rpcUrl =
-  chainName === "sepolia"
-    ? process.env.SEPOLIA_RPC_URL || "https://rpc.sepolia.org"
-    : process.env.BASE_RPC_URL || (chainName === "baseSepolia" ? "https://sepolia.base.org" : "https://mainnet.base.org");
+// Только Ethereum Sepolia
+const chain = sepolia;
+const rpcUrl = process.env.SEPOLIA_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 
 const client = createPublicClient({
   chain,

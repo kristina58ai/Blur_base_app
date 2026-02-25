@@ -12,15 +12,8 @@ import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { useAccount } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 
-// На продакшене (Vercel) всегда Ethereum Sepolia
-const chainName =
-  typeof window !== "undefined" &&
-  (window.location.hostname === "blur-base-app.vercel.app" ||
-    window.location.hostname.endsWith(".vercel.app"))
-    ? "sepolia"
-    : (process.env.NEXT_PUBLIC_CHAIN || "sepolia");
-const CHAIN_ID =
-  chainName === "sepolia" ? 11155111 : chainName === "baseSepolia" ? 84532 : 8453;
+// Только Ethereum Sepolia (chainId 11155111)
+const CHAIN_ID = 11155111;
 
 type ContentMeta = {
   creator: string;
