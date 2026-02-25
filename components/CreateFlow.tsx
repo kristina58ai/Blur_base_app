@@ -13,7 +13,13 @@ import { useAccount } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 import { parseEther } from "viem";
 
-const chainName = process.env.NEXT_PUBLIC_CHAIN || "sepolia";
+// На продакшене (Vercel) всегда Ethereum Sepolia
+const chainName =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "blur-base-app.vercel.app" ||
+    window.location.hostname.endsWith(".vercel.app"))
+    ? "sepolia"
+    : (process.env.NEXT_PUBLIC_CHAIN || "sepolia");
 const CHAIN_ID =
   chainName === "sepolia" ? 11155111 : chainName === "baseSepolia" ? 84532 : 8453;
 
