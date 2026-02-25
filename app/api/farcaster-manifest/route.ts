@@ -1,47 +1,35 @@
 import { NextResponse } from "next/server";
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
+/** Размещённый манифест Farcaster (Mini App). При обновлении в кабинете Farcaster здесь подхватится автоматически. */
+const HOSTED_MANIFEST_URL =
+  "https://api.farcaster.xyz/miniapps/hosted-manifest/019c927a-1870-d983-fd06-de262e501d83";
 
 /**
  * Farcaster Mini App manifest.
- * Доступен по /.well-known/farcaster.json через rewrite.
- *
- * accountAssociation: сгенерировать через https://farcaster.xyz/~/developers/new
- * и добавить в env FARCASTER_ACCOUNT_ASSOCIATION (JSON string) или оставить null.
+ * Доступен по /.well-known/farcaster.json через rewrite в next.config.js.
+ * Отдаёт манифест с Farcaster, чтобы приложение проходило верификацию по домену.
  */
 export async function GET() {
-  const accountAssociation = process.env.FARCASTER_ACCOUNT_ASSOCIATION
-    ? (JSON.parse(process.env.FARCASTER_ACCOUNT_ASSOCIATION) as object)
-    : undefined;
+  try {
+    const res = await fetch(HOSTED_MANIFEST_URL, {
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) {
+      throw new Error(`Farcaster manifest: ${res.status}`);
+    }
+    const manifest = await res.json();
 
-  const manifest = {
-    ...(accountAssociation && { accountAssociation }),
-    miniapp: {
-      version: "1",
-      name: "BlurPay",
-      homeUrl: baseUrl,
-      iconUrl: `${baseUrl}/icon.png`,
-      splashImageUrl: `${baseUrl}/icon.png`,
-      splashBackgroundColor: "#0a0a0a",
-      subtitle: "Pay-to-reveal на Base",
-      description:
-        "Загружай изображения, размывай и продавай доступ. Покупатели платят за reveal.",
-      primaryCategory: "art-creativity",
-      tags: ["pay-to-reveal", "base", "images"],
-      requiredChains: [
-        process.env.NEXT_PUBLIC_CHAIN === "baseSepolia"
-          ? "eip155:84532"
-          : "eip155:8453",
-      ],
-      requiredCapabilities: ["wallet.getEthereumProvider"],
-    },
-  };
-
-  return NextResponse.json(manifest, {
-    headers: {
-      "Content-Type": "application/json",
-      "Cache-Control": "public, max-age=3600",
-    },
-  });
+    return NextResponse.json(manifest, {
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "public, max-age=3600",
+      },
+    });
+  } catch (e) {
+    console.error("Farcaster manifest fetch failed:", e);
+    return NextResponse.json(
+      { error: "Manifest unavailable" },
+      { status: 502 }
+    );
+  }
 }
