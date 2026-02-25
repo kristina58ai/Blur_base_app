@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Transaction,
   TransactionButton,
@@ -36,6 +36,17 @@ export function CreateFlow() {
   const [error, setError] = useState<string | null>(null);
   const [txError, setTxError] = useState<string | null>(null);
   const [frameUrl, setFrameUrl] = useState<string | null>(null);
+  const [switchFailed, setSwitchFailed] = useState(false);
+  const switchedRef = useRef(false);
+
+  // Автоматически переключить на Ethereum Sepolia при неверной сети
+  useEffect(() => {
+    if (!address || chainId === undefined || chainId === SEPOLIA_CHAIN_ID || !switchChainAsync) return;
+    if (switchedRef.current) return;
+    switchedRef.current = true;
+    switchChainAsync({ chainId: SEPOLIA_CHAIN_ID })
+      .catch(() => setSwitchFailed(true));
+  }, [address, chainId, switchChainAsync]);
 
   const initContentId = useCallback(() => {
     if (!contentId) setContentId(generateContentId());
@@ -58,9 +69,10 @@ export function CreateFlow() {
 
   const switchToSepolia = useCallback(async () => {
     setTxError(null);
+    setSwitchFailed(false);
     try {
       await switchChainAsync?.({ chainId: SEPOLIA_CHAIN_ID });
-    } catch (e) {
+    } catch {
       setTxError(
         "Не удалось переключить сеть. Вручную выберите Ethereum Sepolia в кошельке."
       );
@@ -185,20 +197,25 @@ export function CreateFlow() {
         </div>
 
         {isWrongChain && (
-          <div className="rounded-lg border-2 border-amber-500 bg-amber-50 p-4">
-            <p className="mb-2 font-medium text-amber-900">
-              Нужна сеть Ethereum Sepolia
-            </p>
-            <p className="mb-3 text-sm text-amber-800">
-              Сейчас кошелёк в другой сети. Переключите на Ethereum Sepolia для оплаты.
-            </p>
-            <button
-              type="button"
-              onClick={switchToSepolia}
-              className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
-            >
-              Переключить на Ethereum Sepolia
-            </button>
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4">
+            {!switchFailed ? (
+              <p className="text-sm text-amber-800">
+                Переключение на Ethereum Sepolia… Подтвердите в кошельке.
+              </p>
+            ) : (
+              <>
+                <p className="mb-2 text-sm text-amber-800">
+                  Выберите сеть Ethereum Sepolia в кошельке или нажмите кнопку ниже.
+                </p>
+                <button
+                  type="button"
+                  onClick={switchToSepolia}
+                  className="rounded bg-amber-600 px-4 py-2 text-white hover:bg-amber-700"
+                >
+                  Переключить на Ethereum Sepolia
+                </button>
+              </>
+            )}
           </div>
         )}
         {txError && (
