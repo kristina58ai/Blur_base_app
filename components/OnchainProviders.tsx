@@ -3,7 +3,7 @@
 import { OnchainKitProvider } from "@coinbase/onchainkit";
 import { base, baseSepolia, sepolia } from "viem/chains";
 
-const chainName = process.env.NEXT_PUBLIC_CHAIN || "base";
+const chainName = process.env.NEXT_PUBLIC_CHAIN || "sepolia";
 const chain =
   chainName === "sepolia"
     ? sepolia

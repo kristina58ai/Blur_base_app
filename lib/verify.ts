@@ -2,7 +2,7 @@ import { createPublicClient, http } from "viem";
 import { base, baseSepolia, sepolia } from "viem/chains";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "./contract";
 
-const chainName = process.env.NEXT_PUBLIC_CHAIN || "base";
+const chainName = process.env.NEXT_PUBLIC_CHAIN || "sepolia";
 const chain =
   chainName === "sepolia"
     ? sepolia

@@ -12,7 +12,7 @@ import { Wallet, ConnectWallet } from "@coinbase/onchainkit/wallet";
 import { useAccount } from "wagmi";
 import { BLUR_PAY_ABI, BLUR_PAY_ADDRESS } from "@/lib/contract";
 
-const chainName = process.env.NEXT_PUBLIC_CHAIN || "base";
+const chainName = process.env.NEXT_PUBLIC_CHAIN || "sepolia";
 const CHAIN_ID =
   chainName === "sepolia" ? 11155111 : chainName === "baseSepolia" ? 84532 : 8453;
 
